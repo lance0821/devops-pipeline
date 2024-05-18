@@ -103,10 +103,15 @@ spec:
             steps {
                 script {
                     withEnv(["DOCKER_HOST=unix:///run/podman/podman.sock"]) {
-                        def customImage = docker.build("${IMAGE_NAME}")
-                        customImage.push()
-                        customImage.push("${RELEASE}-${BUILD_NUMBER}")
-                        customImage.push("latest")
+                        sh """
+                        podman login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+                        podman build -t ${IMAGE_NAME} .
+                        podman tag ${IMAGE_NAME} ${IMAGE_TAG}
+                        podman tag ${IMAGE_NAME} ${DOCKER_USER}/${APP_NAME}:latest
+                        podman push ${IMAGE_NAME}
+                        podman push ${IMAGE_TAG}
+                        podman push ${DOCKER_USER}/${APP_NAME}:latest
+                        """
                     }
                 }
             }
