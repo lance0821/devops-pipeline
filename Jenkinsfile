@@ -5,10 +5,10 @@ pipeline {
             defaultContainer 'jnlp'
         }
     }
-    tools (
-      jdk 'Java17'
-      maven 'Maven3'
-    )
+    tools {
+        jdk 'Java17'
+        maven 'Maven3'
+    }
     stages {
         stage('Cleanup Workspace') {
             steps {
@@ -19,7 +19,7 @@ pipeline {
         stage('Checkout Code From Github') {
             steps {
                 echo "========== Checking out code =========="
-                git branch: 'main', credentialId: 'github-credentials', url: 'https://github.com/lance0821/devops-pipeline'
+                git branch: 'main', credentialsId: 'github-credentials', url: 'https://github.com/lance0821/devops-pipeline.git'
             }
         }
     }
