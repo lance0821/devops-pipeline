@@ -10,7 +10,7 @@ metadata:
 spec:
   containers:
   - name: jnlp
-    image: jenkins/inbound-agent:latest
+    image: jenkins/inbound-agent:alpine
     args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
     tty: true
     volumeMounts:
@@ -88,7 +88,7 @@ spec:
         }
         stage('Quality Gate') {
             steps {
-                waitForQualityGate abortPipeline: false
+                waitForQualityGate abortPipeline: true
             }
         }
         stage('Verify Podman') {
@@ -99,19 +99,21 @@ spec:
                 }
             }
         }
-        stage('Build & Push Podman Image') {
+        stage('Build & Push Docker Image') {
             steps {
-                script {
-                    withEnv(["DOCKER_HOST=unix:///run/podman/podman.sock"]) {
-                        sh """
-                        podman login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-                        podman build -t ${IMAGE_NAME} .
-                        podman tag ${IMAGE_NAME} ${IMAGE_TAG}
-                        podman tag ${IMAGE_NAME} ${DOCKER_USER}/${APP_NAME}:latest
-                        podman push ${IMAGE_NAME}
-                        podman push ${IMAGE_TAG}
-                        podman push ${DOCKER_USER}/${APP_NAME}:latest
-                        """
+                container('podman') {
+                    script {
+                        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                            sh """
+                            podman login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+                            podman build -t ${IMAGE_NAME} .
+                            podman tag ${IMAGE_NAME} ${IMAGE_TAG}
+                            podman tag ${IMAGE_NAME} ${DOCKER_USER}/${APP_NAME}:latest
+                            podman push ${IMAGE_NAME}
+                            podman push ${IMAGE_TAG}
+                            podman push ${DOCKER_USER}/${APP_NAME}:latest
+                            """
+                        }
                     }
                 }
             }
