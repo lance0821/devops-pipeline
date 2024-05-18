@@ -114,13 +114,16 @@ spec:
                 container('podman') {
                     withCredentials([string(credentialsId: 'JENKINS_API_TOKEN', variable: 'API_TOKEN')]) {
                         script {
-                            def crumb = sh(script: "curl -u admin:${API_TOKEN} 'https://jenkins.lancelewandowski.com/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)'", returnStdout: true).trim()
+                            def crumb = sh(script: """
+                                curl -u admin:${API_TOKEN} \
+                                'https://jenkins.lancelewandowski.com/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)' \
+                                """, returnStdout: true).trim()
                             sh """
                             curl -v -k --user admin:${API_TOKEN} \
                             -H "${crumb}" \
                             -X POST -H 'cache-control: no-cache' \
                             -H 'content-type: application/x-www-form-urlencoded' \
-                            --data 'IMAGE_TAG=${IMAGE_TAG}' \
+                            --data-urlencode 'IMAGE_TAG=${IMAGE_TAG}' \
                             'https://jenkins.lancelewandowski.com/job/gitops-pipeline/buildWithParameters?token=gitops-token'
                             """
                         }
