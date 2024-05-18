@@ -91,19 +91,12 @@ spec:
                 waitForQualityGate abortPipeline: true
             }
         }
-        stage('Verify Podman') {
-            steps {
-                container('podman') {
-                    sh 'podman --version'
-                    sh 'podman run hello-world'
-                }
-            }
-        }
+
         stage('Build & Push Docker Image') {
             steps {
                 container('podman') {
                     script {
-                        withCredentials([usernamePassword(credentialsId: 'docker-hub-pass', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        withCredentials([string(credentialsId: 'docker-hub-pass', variable: 'DOCKER_PASS')]) {
                             sh """
                             podman login -u ${DOCKER_USER} -p ${DOCKER_PASS} docker.io
                             podman build -t ${IMAGE_NAME} .
