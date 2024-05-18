@@ -9,6 +9,14 @@ pipeline {
         jdk 'Java17'
         maven 'Maven3'
     }
+    environment {
+        APP_NAME = 'devops-pipeline'
+        RELEASE = '1.0.0'
+        DOCKER_USER = 'lance0821'
+        DOCKER_PASS = credentials('docker-hub-credentials')
+        IMAGE_NAME = "${DOCKER_USER}/${APP_NAME}:${RELEASE}"
+        IMAGE_TAG = "${DOCKER_USER}/${APP_NAME}:${RELEASE}-${BUILD_NUMBER}"
+    }
     stages {
         stage('Cleanup Workspace') {
             steps {
@@ -42,6 +50,18 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 waitForQualityGate abortPipeline: true
+            }
+        }
+        stage('Build & Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
+                        def customImage = docker.build("${IMAGE_NAME}")
+                        customImage.push()
+                        customImage.push("${RELEASE}-${BUILD_NUMBER}")
+                        customImage.push("latest")
+                    }
+                }
             }
         }
     }
