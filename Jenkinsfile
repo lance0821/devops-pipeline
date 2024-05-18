@@ -10,32 +10,32 @@ metadata:
 spec:
   containers:
   - name: jnlp
-    image: jenkins/inbound-agent:alpine
+    image: jenkins/inbound-agent:latest
     args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
     tty: true
     volumeMounts:
       - name: workspace-volume
         mountPath: /home/jenkins/agent
-  - name: docker
-    image: docker:20.10.7-dind
+  - name: podman
+    image: quay.io/podman/stable
+    command:
+      - cat
+    tty: true
     securityContext:
       privileged: true
-    env:
-      - name: DOCKER_TLS_CERTDIR
-        value: ""
     volumeMounts:
-      - name: docker-sock
-        mountPath: /var/run/docker.sock
-      - name: docker-storage
-        mountPath: /var/lib/docker
+      - name: podman-sock
+        mountPath: /run/podman/podman.sock
+      - name: podman-storage
+        mountPath: /var/lib/containers/storage
   volumes:
   - name: workspace-volume
     emptyDir: {}
-  - name: docker-sock
+  - name: podman-sock
     hostPath:
-      path: /var/run/docker.sock
+      path: /run/podman/podman.sock
       type: Socket
-  - name: docker-storage
+  - name: podman-storage
     emptyDir: {}
 """
         }
@@ -91,18 +91,18 @@ spec:
                 waitForQualityGate abortPipeline: true
             }
         }
-        stage('Verify Docker') {
+        stage('Verify Podman') {
             steps {
-                container('docker') {
-                    sh 'docker --version'
-                    sh 'docker run hello-world'
+                container('podman') {
+                    sh 'podman --version'
+                    sh 'podman run hello-world'
                 }
             }
         }
-        stage('Build & Push Docker Image') {
+        stage('Build & Push Podman Image') {
             steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
+                    withEnv(["DOCKER_HOST=unix:///run/podman/podman.sock"]) {
                         def customImage = docker.build("${IMAGE_NAME}")
                         customImage.push()
                         customImage.push("${RELEASE}-${BUILD_NUMBER}")
