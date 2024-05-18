@@ -49,8 +49,8 @@ spec:
         RELEASE = '1.0.0'
         DOCKER_USER = 'lance0821'
         DOCKER_PASS = credentials('docker-hub-pass')
-        IMAGE_NAME = "${DOCKER_USER}/${APP_NAME}:${RELEASE}"
-        IMAGE_TAG = "${DOCKER_USER}/${APP_NAME}:${RELEASE}-${BUILD_NUMBER}"
+        IMAGE_NAME = "docker.io/${DOCKER_USER}/${APP_NAME}:${RELEASE}"
+        IMAGE_TAG = "docker.io/${DOCKER_USER}/${APP_NAME}:${RELEASE}-${BUILD_NUMBER}"
     }
     stages {
         stage('Cleanup Workspace') {
@@ -103,16 +103,17 @@ spec:
             steps {
                 container('podman') {
                     script {
+                        withCredentials([usernamePassword(credentialsId: 'docker-hub-pass', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                             sh """
-                            podman login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+                            podman login -u ${DOCKER_USER} -p ${DOCKER_PASS} docker.io
                             podman build -t ${IMAGE_NAME} .
                             podman tag ${IMAGE_NAME} ${IMAGE_TAG}
-                            podman tag ${IMAGE_NAME} ${DOCKER_USER}/${APP_NAME}:latest
+                            podman tag ${IMAGE_NAME} docker.io/${DOCKER_USER}/${APP_NAME}:latest
                             podman push ${IMAGE_NAME}
                             podman push ${IMAGE_TAG}
-                            podman push ${DOCKER_USER}/${APP_NAME}:latest
+                            podman push docker.io/${DOCKER_USER}/${APP_NAME}:latest
                             """
-
+                        }
                     }
                 }
             }
