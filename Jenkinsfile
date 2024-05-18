@@ -3,27 +3,6 @@ pipeline {
         kubernetes {
             inheritFrom 'jnlp-slave'
             defaultContainer 'jnlp'
-                        yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  containers:
-  - name: jnlp
-    image: jenkins/inbound-agent:latest
-    args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
-  - name: docker
-    image: docker:19.03.12
-    command:
-    - cat
-    tty: true
-    volumeMounts:
-    - name: docker-sock
-      mountPath: /var/run/docker.sock
-  volumes:
-  - name: docker-sock
-    hostPath:
-      path: /var/run/docker.sock
-"""
         }
     }
     tools {
@@ -47,6 +26,21 @@ spec:
         stage('Checkout Code From Github') {
             steps {
                 git branch: 'main', credentialsId: 'github-credentials', url: 'https://github.com/lance0821/devops-pipeline.git'
+            }
+        }
+        stage('Install Docker') {
+            steps {
+                script {
+                    sh '''
+                    apt-get update
+                    apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+                    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+                    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+                    apt-get update
+                    apt-get install -y docker-ce
+                    usermod -aG docker jenkins
+                    '''
+                }
             }
         }
         stage('Build Application') {
