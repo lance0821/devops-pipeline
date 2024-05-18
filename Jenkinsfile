@@ -12,26 +12,28 @@ pipeline {
     stages {
         stage('Cleanup Workspace') {
             steps {
-                echo "========== Executing Cleaning Workspace =========="
                 cleanWs()
             }
         }
         stage('Checkout Code From Github') {
             steps {
-                echo "========== Checking out code =========="
                 git branch: 'main', credentialsId: 'github-credentials', url: 'https://github.com/lance0821/devops-pipeline.git'
             }
         }
         stage('Build Application') {
             steps {
-                echo "========== Building the Application =========="
                 sh "mvn clean package"
             }
         }
         stage('Test Application') {
             steps {
-                echo "========== Testing the Application =========="
                 sh "mvn test"
+            }
+        }
+        stage('Sonarqube Analysis') {
+            steps {
+              withSonarQubeEnv(credentialsID: 'jenkins-sonarqube-token') {
+                sh "mvn sonar:sonar"
             }
         }
     }
