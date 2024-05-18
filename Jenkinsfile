@@ -3,6 +3,27 @@ pipeline {
         kubernetes {
             inheritFrom 'jnlp-slave'
             defaultContainer 'jnlp'
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:alpine
+    args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
+  - name: docker
+    image: docker:19.03.12
+    command:
+    - cat
+    tty: true
+    volumeMounts:
+    - name: docker-sock
+      mountPath: /var/run/docker.sock
+  volumes:
+  - name: docker-sock
+    hostPath:
+      path: /var/run/docker.sock
+"""
         }
     }
     tools {
@@ -42,7 +63,7 @@ pipeline {
             steps {
                 withSonarQubeEnv('sonarqube') {
                     withCredentials([string(credentialsId: 'jenkins-sonarqube-token', variable: 'SONAR_TOKEN')]) {
-                        sh "mvn sonar:sonar -Dsonar.login=$SONAR_TOKEN"
+                        sh "mvn sonar:sonar -Dsonar.login=$SONAR_TOKEN -Dsonar.projectVersion=${BUILD_NUMBER}"
                     }
                 }
             }
