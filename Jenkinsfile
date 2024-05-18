@@ -1,8 +1,42 @@
 pipeline {
     agent {
         kubernetes {
-            inheritFrom 'jnlp-slave'
-            defaultContainer 'jnlp'
+                        yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins/label: jnlp-slave
+spec:
+  containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:latest
+    args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
+    tty: true
+    volumeMounts:
+      - name: workspace-volume
+        mountPath: /home/jenkins/agent
+  - name: docker
+    image: docker:26.1.3-dind
+    securityContext:
+      privileged: true
+    env:
+      - name: DOCKER_TLS_CERTDIR
+        value: ""
+    volumeMounts:
+      - name: docker-sock
+        mountPath: /var/run/docker.sock
+      - name: docker-storage
+        mountPath: /var/lib/docker
+  volumes:
+  - name: workspace-volume
+    emptyDir: {}
+  - name: docker-sock
+    hostPath:
+      path: /var/run/docker.sock
+  - name: docker-storage
+    emptyDir: {}
+"""
         }
     }
     tools {
