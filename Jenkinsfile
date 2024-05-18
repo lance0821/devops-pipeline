@@ -3,7 +3,7 @@ pipeline {
         kubernetes {
             inheritFrom 'jnlp-slave'
             defaultContainer 'jnlp'
-            yaml """
+                        yaml """
 apiVersion: v1
 kind: Pod
 spec:
