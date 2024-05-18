@@ -45,7 +45,6 @@ pipeline {
                     withCredentials([string(credentialsId: 'jenkins-sonarqube-token')])
                 }
             }
-        }
-        
-    }
+
+      }
 }
