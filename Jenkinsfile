@@ -51,6 +51,7 @@ spec:
         DOCKER_PASS = credentials('docker-hub-pass')
         IMAGE_NAME = "docker.io/${DOCKER_USER}/${APP_NAME}:${RELEASE}"
         IMAGE_TAG = "docker.io/${DOCKER_USER}/${APP_NAME}:${RELEASE}-${BUILD_NUMBER}"
+        JENKINS_API_TOKEN = "${JENKINS_API_TOKEN}"
     }
     stages {
         stage('Cleanup Workspace') {
@@ -107,6 +108,16 @@ spec:
                             podman push docker.io/${DOCKER_USER}/${APP_NAME}:latest
                             """
                         }
+                    }
+                }
+            }
+        }
+                stage('Trigger CD Pipeline') {
+            steps {
+                container('podman') {
+                    script {
+                      sh "curl -v -k --user admin:$(JENKINS_API_TOKEN) -X POST -H 'cache-controls: no-cache' -H 'content-type: application/x-www-form-urlencoded' --data 'IMAGE_TAG=${IMAGE_TAG}' 'https://jenkins.lancelewandowski.com/job/gitops-pipeline/buildWithParameters?token=gitops-token'"
+
                     }
                 }
             }
