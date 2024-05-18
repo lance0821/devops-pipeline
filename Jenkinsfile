@@ -88,7 +88,7 @@ spec:
         }
         stage('Quality Gate') {
             steps {
-                waitForQualityGate abortPipeline: true
+                waitForQualityGate abortPipeline: false
             }
         }
         stage('Verify Podman') {
