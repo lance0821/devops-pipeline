@@ -93,18 +93,16 @@ spec:
         stage('Build & Push Docker Image') {
             steps {
                 container('podman') {
-                    script {
-                        withCredentials([string(credentialsId: 'docker-hub-pass', variable: 'DOCKER_PASS')]) {
-                            sh """
-                            podman login -u ${DOCKER_USER} -p ${DOCKER_PASS} docker.io
-                            podman build -t ${IMAGE_NAME} .
-                            podman tag ${IMAGE_NAME} ${IMAGE_TAG}
-                            podman tag ${IMAGE_NAME} docker.io/${DOCKER_USER}/${APP_NAME}:latest
-                            podman push ${IMAGE_NAME}
-                            podman push ${IMAGE_TAG}
-                            podman push docker.io/${DOCKER_USER}/${APP_NAME}:latest
-                            """
-                        }
+                    withCredentials([string(credentialsId: 'docker-hub-pass', variable: 'DOCKER_PASS')]) {
+                        sh """
+                        podman login -u ${DOCKER_USER} -p ${DOCKER_PASS} docker.io
+                        podman build -t ${IMAGE_NAME} .
+                        podman tag ${IMAGE_NAME} ${IMAGE_TAG}
+                        podman tag ${IMAGE_NAME} docker.io/${DOCKER_USER}/${APP_NAME}:latest
+                        podman push ${IMAGE_NAME}
+                        podman push ${IMAGE_TAG}
+                        podman push docker.io/${DOCKER_USER}/${APP_NAME}:latest
+                        """
                     }
                 }
             }
@@ -113,15 +111,13 @@ spec:
             steps {
                 container('podman') {
                     withCredentials([string(credentialsId: 'JENKINS_API_TOKEN', variable: 'API_TOKEN')]) {
-                        script {
-                            sh """
-                            curl -v -k --user admin:${API_TOKEN} \
-                            -X POST -H 'cache-control: no-cache' \
-                            -H 'content-type: application/x-www-form-urlencoded' \
-                            --data 'IMAGE_TAG=${IMAGE_TAG}' \
-                            'https://jenkins.lancelewandowski.com/job/gitops-pipeline/buildWithParameters?token=gitops-token'
-                            """
-                        }
+                        sh """
+                        curl -v -k --user admin:$API_TOKEN \
+                        -X POST -H 'cache-control: no-cache' \
+                        -H 'content-type: application/x-www-form-urlencoded' \
+                        --data 'IMAGE_TAG=${IMAGE_TAG}' \
+                        'https://jenkins.lancelewandowski.com/job/gitops-pipeline/buildWithParameters?token=gitops-token'
+                        """
                     }
                 }
             }
