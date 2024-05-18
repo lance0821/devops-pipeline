@@ -1,7 +1,7 @@
 pipeline {
     agent {
         kubernetes {
-                        yaml """
+            yaml """
 apiVersion: v1
 kind: Pod
 metadata:
@@ -10,31 +10,29 @@ metadata:
 spec:
   containers:
   - name: jnlp
-    image: jenkins/inbound-agent:latest
+    image: jenkins/inbound-agent:alpine
     args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
     tty: true
     volumeMounts:
       - name: workspace-volume
         mountPath: /home/jenkins/agent
-  - name: docker
-    image: docker:26.1.3-dind
-    securityContext:
-      privileged: true
-    env:
-      - name: DOCKER_TLS_CERTDIR
-        value: ""
+  - name: podman
+    image: quay.io/podman/stable
+    command:
+      - cat
+    tty: true
     volumeMounts:
-      - name: docker-sock
-        mountPath: /var/run/docker.sock
-      - name: docker-storage
-        mountPath: /var/lib/docker
+      - name: podman-sock
+        mountPath: /var/run/podman/podman.sock
+      - name: podman-storage
+        mountPath: /var/lib/containers/storage
   volumes:
   - name: workspace-volume
     emptyDir: {}
-  - name: docker-sock
+  - name: podman-sock
     hostPath:
-      path: /var/run/docker.sock
-  - name: docker-storage
+      path: /run/podman/podman.sock
+  - name: podman-storage
     emptyDir: {}
 """
         }
@@ -62,7 +60,6 @@ spec:
                 git branch: 'main', credentialsId: 'github-credentials', url: 'https://github.com/lance0821/devops-pipeline.git'
             }
         }
-
         stage('Build Application') {
             steps {
                 sh "mvn clean package"
@@ -77,20 +74,32 @@ spec:
             steps {
                 withSonarQubeEnv('sonarqube') {
                     withCredentials([string(credentialsId: 'jenkins-sonarqube-token', variable: 'SONAR_TOKEN')]) {
-                        sh "mvn sonar:sonar -Dsonar.login=$SONAR_TOKEN -Dsonar.projectVersion=${BUILD_NUMBER}"
+                        sh """
+                        mvn sonar:sonar \
+                        -Dsonar.login=$SONAR_TOKEN \
+                        -Dsonar.projectVersion=${BUILD_NUMBER}
+                        """
                     }
                 }
             }
         }
         stage('Quality Gate') {
             steps {
-                waitForQualityGate abortPipeline: false
+                waitForQualityGate abortPipeline: true
             }
         }
-        stage('Build & Push Docker Image') {
+        stage('Verify Podman') {
+            steps {
+                container('podman') {
+                    sh 'podman --version'
+                    sh 'podman run hello-world'
+                }
+            }
+        }
+        stage('Build & Push Podman Image') {
             steps {
                 script {
-                    docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
+                    withEnv(["DOCKER_HOST=unix:///var/run/podman/podman.sock"]) {
                         def customImage = docker.build("${IMAGE_NAME}")
                         customImage.push()
                         customImage.push("${RELEASE}-${BUILD_NUMBER}")
