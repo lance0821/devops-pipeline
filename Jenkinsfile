@@ -22,5 +22,17 @@ pipeline {
                 git branch: 'main', credentialsId: 'github-credentials', url: 'https://github.com/lance0821/devops-pipeline.git'
             }
         }
+        stage('Build Application') {
+            steps {
+                echo "========== Building the Application =========="
+                sh "mvn clean package"
+            }
+        }
+        stage('Test Application') {
+            steps {
+                echo "========== Testing the Application =========="
+                sh "mvn test"
+            }
+        }
     }
 }
