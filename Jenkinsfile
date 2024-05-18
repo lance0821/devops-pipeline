@@ -51,7 +51,7 @@ spec:
         DOCKER_PASS = credentials('docker-hub-pass')
         IMAGE_NAME = "docker.io/${DOCKER_USER}/${APP_NAME}:${RELEASE}"
         IMAGE_TAG = "docker.io/${DOCKER_USER}/${APP_NAME}:${RELEASE}-${BUILD_NUMBER}"
-        JENKINS_API_TOKEN = "${JENKINS_API_TOKEN}"
+        JENKINS_API_TOKEN = credentials('JENKINS_API_TOKEN')
     }
     stages {
         stage('Cleanup Workspace') {
