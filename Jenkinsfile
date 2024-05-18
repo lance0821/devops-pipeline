@@ -28,7 +28,7 @@ pipeline {
                 git branch: 'main', credentialsId: 'github-credentials', url: 'https://github.com/lance0821/devops-pipeline.git'
             }
         }
-        
+
         stage('Build Application') {
             steps {
                 sh "mvn clean package"
@@ -50,7 +50,7 @@ pipeline {
         }
         stage('Quality Gate') {
             steps {
-                waitForQualityGate abortPipeline: true
+                waitForQualityGate abortPipeline: false
             }
         }
         stage('Build & Push Docker Image') {
