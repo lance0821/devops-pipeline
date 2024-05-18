@@ -48,7 +48,7 @@ spec:
         APP_NAME = 'devops-pipeline'
         RELEASE = '1.0.0'
         DOCKER_USER = 'lance0821'
-        DOCKER_PASS = credentials('docker-hub-credentials')
+        DOCKER_PASS = credentials('docker-hub-pass')
         IMAGE_NAME = "${DOCKER_USER}/${APP_NAME}:${RELEASE}"
         IMAGE_TAG = "${DOCKER_USER}/${APP_NAME}:${RELEASE}-${BUILD_NUMBER}"
     }
@@ -103,7 +103,6 @@ spec:
             steps {
                 container('podman') {
                     script {
-                        withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                             sh """
                             podman login -u ${DOCKER_USER} -p ${DOCKER_PASS}
                             podman build -t ${IMAGE_NAME} .
@@ -113,7 +112,7 @@ spec:
                             podman push ${IMAGE_TAG}
                             podman push ${DOCKER_USER}/${APP_NAME}:latest
                             """
-                        }
+
                     }
                 }
             }
