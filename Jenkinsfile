@@ -114,9 +114,15 @@ spec:
                 container('podman') {
                     withCredentials([string(credentialsId: 'JENKINS_API_TOKEN', variable: 'API_TOKEN')]) {
                         script {
+                            def crumb = sh(
+                                script: "curl -u lance0821:${API_TOKEN} 'https://jenkins.lancelewandowski.com/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)'",
+                                returnStdout: true
+                            ).trim()
+
                             sh """
                             curl -v -k --user admin:${API_TOKEN} \
-                            -X POST -H 'cache-control: no-cache' \
+                            -H "\${crumb}" \
+                            -H 'cache-control: no-cache' \
                             -H 'content-type: application/x-www-form-urlencoded' \
                             --data-urlencode 'IMAGE_TAG=${IMAGE_TAG}' \
                             'https://jenkins.lancelewandowski.com/job/gitops-pipeline/buildWithParameters?token=gitops-token'
