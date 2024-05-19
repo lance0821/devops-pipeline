@@ -118,10 +118,9 @@ spec:
                                 script: "curl -u lance0821:${API_TOKEN} 'https://jenkins.lancelewandowski.com/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)'",
                                 returnStdout: true
                             ).trim()
-
                             sh """
-                            curl -v -k --user admin:${API_TOKEN} \
-                            -H "\${crumb}" \
+                            curl -v -k --user lance0821:${API_TOKEN} \
+                            -H "${crumb}" \
                             -H 'cache-control: no-cache' \
                             -H 'content-type: application/x-www-form-urlencoded' \
                             --data-urlencode 'IMAGE_TAG=${IMAGE_TAG}' \
